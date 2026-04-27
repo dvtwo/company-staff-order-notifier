@@ -1,7 +1,6 @@
 import { json } from "@remix-run/node";
 import { NavMenu } from "@shopify/app-bridge-react";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
-import polarisTranslations from "@shopify/polaris/locales/en.json";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
 
@@ -16,7 +15,7 @@ export default function AppLayout() {
   const { apiKey } = useLoaderData();
 
   return (
-    <AppProvider isEmbeddedApp apiKey={apiKey} i18n={polarisTranslations}>
+    <AppProvider isEmbeddedApp apiKey={apiKey}>
       <NavMenu>
         <a href="/app">Dashboard</a>
         <a href="/app/settings">Settings</a>
