@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id          String    @id
+  shop        String
+  state       String
+  isOnline    Boolean   @default(false)
+  scope       String?
+  expires     DateTime?
+  accessToken String
+  userId      BigInt?
+  firstName   String?
+  lastName    String?
+  email       String?
+  accountOwner Boolean? @default(false)
+  locale      String?
+  collaborator Boolean? @default(false)
+  emailVerified Boolean? @default(false)
+
+  @@index([shop])
+}
+
+model NotificationSetting {
+  id                   String   @id @default(cuid())
+  shop                 String   @unique
+  enabled              Boolean  @default(true)
+  fromEmail            String?
+  fromName             String?
+  emailSubjectTemplate String   @default("New order from {{companyName}}: {{orderName}}")
+  emailBodyTemplate    String   @default("A new order has been placed.\n\nOrder: {{orderName}}\nCustomer: {{customerName}}\nCompany: {{companyName}}\nLocation: {{companyLocationName}}\nTotal: {{orderTotal}}\n\nItems:\n{{lineItems}}\n\nView order:\n{{orderAdminUrl}}")
+  smtpHost             String?
+  smtpPort             Int      @default(587)
+  smtpUser             String?
+  smtpPassword         String?
+  smtpSecure           Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model CompanyRecipientMapping {
+  id                  String   @id @default(cuid())
+  shop                String
+  companyId           String?
+  companyName         String
+  companyLocationId   String?
+  companyLocationName String?
+  recipientEmails     String
+  enabled             Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([shop])
+  @@index([shop, companyId])
+  @@index([shop, companyLocationId])
+}
+
+model NotificationLog {
+  id                  String   @id @default(cuid())
+  shop                String
+  orderId             String
+  orderName           String?
+  companyId           String?
+  companyName         String?
+  companyLocationId   String?
+  companyLocationName String?
+  recipients          String?
+  status              String
+  message             String?
+  createdAt           DateTime @default(now())
+
+  @@index([shop, createdAt])
+  @@index([shop, status])
+}
