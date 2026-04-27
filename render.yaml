@@ -28,4 +28,5 @@ services:
           property: connectionString
 databases:
   - name: company-staff-order-notifier-db
-    plan: starter
+    plan: basic-256mb
+    diskSizeGB: 1
