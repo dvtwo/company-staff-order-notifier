@@ -2,10 +2,9 @@ import { redirect } from "@remix-run/node";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
-  const shop = url.searchParams.get("shop");
 
-  if (shop) {
-    return redirect(`/app?shop=${encodeURIComponent(shop)}`);
+  if (url.search) {
+    return redirect(`/app${url.search}`);
   }
 
   return new Response(
