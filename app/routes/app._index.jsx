@@ -1,16 +1,5 @@
 import { json } from "@remix-run/node";
-import {
-  Badge,
-  BlockStack,
-  Card,
-  DataTable,
-  InlineStack,
-  Layout,
-  Page,
-  Text,
-} from "@shopify/polaris";
-import { useLoaderData } from "@remix-run/react";
-import { AppTabs } from "../components/AppTabs";
+import { Link, useLoaderData } from "@remix-run/react";
 import { prisma } from "../db.server";
 import { authenticate } from "../shopify.server";
 import { getNotificationSetting } from "../utils/notificationSettings.server";
@@ -50,92 +39,30 @@ export const loader = async ({ request }) => {
   });
 };
 
-function statusTone(status) {
-  if (status === "sent") return "success";
-  if (status === "failed") return "critical";
-  if (status === "no_recipients") return "warning";
-  return "info";
-}
-
 export default function DashboardPage() {
   const { settings, counts, recentLogs } = useLoaderData();
 
   return (
-    <Page title="Company Staff Order Notifier">
-      <BlockStack gap="500">
-        <AppTabs />
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <BlockStack gap="400">
-                <InlineStack align="space-between">
-                  <Text as="h2" variant="headingMd">
-                    App status
-                  </Text>
-                  <Badge tone={settings.enabled ? "success" : "critical"}>
-                    {settings.enabled ? "Enabled" : "Disabled"}
-                  </Badge>
-                </InlineStack>
-                <InlineStack gap="400" wrap>
-                  <Card>
-                    <BlockStack gap="100">
-                      <Text as="p" variant="bodySm" tone="subdued">
-                        Sent
-                      </Text>
-                      <Text as="p" variant="headingLg">
-                        {counts.sent || 0}
-                      </Text>
-                    </BlockStack>
-                  </Card>
-                  <Card>
-                    <BlockStack gap="100">
-                      <Text as="p" variant="bodySm" tone="subdued">
-                        Failed
-                      </Text>
-                      <Text as="p" variant="headingLg">
-                        {counts.failed || 0}
-                      </Text>
-                    </BlockStack>
-                  </Card>
-                  <Card>
-                    <BlockStack gap="100">
-                      <Text as="p" variant="bodySm" tone="subdued">
-                        No recipients
-                      </Text>
-                      <Text as="p" variant="headingLg">
-                        {counts.no_recipients || 0}
-                      </Text>
-                    </BlockStack>
-                  </Card>
-                </InlineStack>
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-
-          <Layout.Section>
-            <Card>
-              <BlockStack gap="400">
-                <Text as="h2" variant="headingMd">
-                  Last 10 notification logs
-                </Text>
-                <DataTable
-                  columnContentTypes={["text", "text", "text", "text", "text"]}
-                  headings={["Order", "Company", "Recipients", "Status", "Created"]}
-                  rows={recentLogs.map((log) => [
-                    log.orderName || log.orderId,
-                    log.companyName || "N/A",
-                    log.recipients || "N/A",
-                    <Badge key={log.id} tone={statusTone(log.status)}>
-                      {log.status}
-                    </Badge>,
-                    new Date(log.createdAt).toLocaleString(),
-                  ])}
-                />
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </BlockStack>
-    </Page>
+    <main style={{ padding: "24px", color: "#111", background: "#fff", minHeight: "100vh", fontFamily: "sans-serif" }}>
+      <h1>Company Staff Order Notifier</h1>
+      <p>Status: {settings.enabled ? "Enabled" : "Disabled"}</p>
+      <p>Sent: {counts.sent || 0}</p>
+      <p>Failed: {counts.failed || 0}</p>
+      <p>No recipients: {counts.no_recipients || 0}</p>
+      <nav style={{ display: "flex", gap: "16px", margin: "16px 0" }}>
+        <Link to="/app">Dashboard</Link>
+        <Link to="/app/settings">Settings</Link>
+        <Link to="/app/mappings">Company mappings</Link>
+        <Link to="/app/logs">Logs</Link>
+      </nav>
+      <h2>Recent logs</h2>
+      <ul>
+        {recentLogs.map((log) => (
+          <li key={log.id}>
+            {(log.orderName || log.orderId) + " | " + (log.status || "")}
+          </li>
+        ))}
+      </ul>
+    </main>
   );
 }
