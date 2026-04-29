@@ -1,6 +1,6 @@
-import { redirect } from "@remix-run/node";
+import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  const url = new URL(request.url);
-  return redirect(`/app${url.search}`);
+  const { redirect } = await authenticate.admin(request);
+  return redirect("/app");
 };
