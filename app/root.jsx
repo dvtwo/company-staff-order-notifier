@@ -22,8 +22,10 @@ export const loader = async ({ request }) => {
   const isResourceRoute =
     pathname === "/healthz" ||
     pathname.startsWith("/webhooks/");
+  const isAuthRoute =
+    pathname === "/auth" || pathname.startsWith("/auth/");
 
-  if (isResourceRoute) {
+  if (isResourceRoute || isAuthRoute) {
     return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   }
 
