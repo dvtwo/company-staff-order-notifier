@@ -2,7 +2,7 @@
 
 client_id = "4ff0bde3507b274dd4d379f3e80b84d3"
 name = "company-staff-order-notifier"
-application_url = "https://company-staff-order-notifier.onrender.com/app"
+application_url = "https://company-staff-order-notifier.onrender.com"
 embedded = true
 handle = "company-staff-order-notifier"
 
