@@ -13,11 +13,12 @@ import {
 } from "./utils/templates.server";
 
 const apiVersion = process.env.SHOPIFY_API_VERSION || ApiVersion.April25;
+const appUrl = process.env.SHOPIFY_APP_URL || process.env.RENDER_EXTERNAL_URL;
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || process.env.SHOPIFY_API_SECRET_KEY,
-  appUrl: process.env.SHOPIFY_APP_URL,
+  appUrl,
   scopes: (process.env.SCOPES || "").split(",").map((scope) => scope.trim()).filter(Boolean),
   apiVersion,
   sessionStorage: new PrismaSessionStorage(prisma),
@@ -45,9 +46,6 @@ const shopify = shopifyApp({
         },
       });
     },
-  },
-  future: {
-    unstable_newEmbeddedAuthStrategy: true,
   },
 });
 
