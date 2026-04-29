@@ -11,25 +11,11 @@ import {
   useLoaderData,
   useRouteError,
 } from "@remix-run/react";
-import { authenticate } from "./shopify.server";
 
 export const meta = () => [{ title: "Company Staff Order Notifier" }];
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
-export const loader = async ({ request }) => {
-  const url = new URL(request.url);
-  const pathname = url.pathname;
-  const isResourceRoute =
-    pathname === "/healthz" ||
-    pathname.startsWith("/webhooks/");
-  const isAuthRoute =
-    pathname === "/auth" || pathname.startsWith("/auth/");
-
-  if (isResourceRoute || isAuthRoute) {
-    return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
-  }
-
-  await authenticate.admin(request);
+export const loader = async () => {
   return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
 };
 
