@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { authenticate } from "../shopify.server";
+import { authenticate, login } from "../shopify.server";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
@@ -14,6 +14,10 @@ export const loader = async ({ request }) => {
   if (url.pathname === "/auth/exit-iframe") {
     const exitTarget = url.searchParams.get("exitIframe") || "";
     return json({ mode: "exit-iframe", apiKey, exitTarget });
+  }
+
+  if (url.pathname === "/auth/login") {
+    return login(request);
   }
 
   await authenticate.admin(request);
