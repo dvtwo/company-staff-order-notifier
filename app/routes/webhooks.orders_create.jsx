@@ -34,6 +34,20 @@ export const action = async ({ request }) => {
     return new Response(null, { status: 200 });
   }
 
+  // Deduplicate: if we already sent (or attempted) a notification for this
+  // order, Shopify fired the webhook more than once — skip silently.
+  const alreadyProcessed = await prisma.notificationLog.findFirst({
+    where: {
+      shop,
+      orderId: orderIdFromPayload,
+      status: { in: ["sent", "no_recipients", "skipped"] },
+    },
+  });
+
+  if (alreadyProcessed) {
+    return new Response(null, { status: 200 });
+  }
+
   try {
     const settings = await getNotificationSetting(shop);
 
