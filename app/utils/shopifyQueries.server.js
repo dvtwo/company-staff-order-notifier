@@ -107,40 +107,61 @@ export async function getOrderDetails(admin, orderGid) {
 }
 
 export async function getCompaniesWithLocations(admin) {
-  const response = await admin.graphql(
-    `#graphql
-      query GetCompaniesWithLocations {
-        companies(first: 50) {
-          nodes {
-            id
-            name
-            locations(first: 20) {
-              nodes {
-                id
-                name
+  const allCompanies = [];
+  let cursor = null;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const response = await admin.graphql(
+      `#graphql
+        query GetCompaniesWithLocations($cursor: String) {
+          companies(first: 250, after: $cursor) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              id
+              name
+              locations(first: 50) {
+                nodes {
+                  id
+                  name
+                }
               }
             }
           }
         }
-      }
-    `,
-  );
+      `,
+      { variables: { cursor } },
+    );
 
-  const payload = await response.json();
+    const payload = await response.json();
 
-  if (payload.errors?.length) {
-    const message = payload.errors.map((e) => e.message).join("; ");
-    throw new Error(`Shopify companies query failed: ${message}`);
+    if (payload.errors?.length) {
+      const message = payload.errors.map((e) => e.message).join("; ");
+      throw new Error(`Shopify companies query failed: ${message}`);
+    }
+
+    const companiesData = payload.data?.companies;
+    const nodes = companiesData?.nodes || [];
+
+    for (const company of nodes) {
+      allCompanies.push({
+        id: company.id,
+        name: company.name,
+        locations: (company.locations?.nodes || []).map((loc) => ({
+          id: loc.id,
+          name: loc.name,
+        })),
+      });
+    }
+
+    hasNextPage = companiesData?.pageInfo?.hasNextPage ?? false;
+    cursor = companiesData?.pageInfo?.endCursor ?? null;
   }
 
-  return (payload.data?.companies?.nodes || []).map((company) => ({
-    id: company.id,
-    name: company.name,
-    locations: (company.locations?.nodes || []).map((loc) => ({
-      id: loc.id,
-      name: loc.name,
-    })),
-  }));
+  return allCompanies;
 }
 
 export async function getCompanyLocationAssignedStaff(admin, companyLocationGid) {
