@@ -128,6 +128,7 @@ export default function SettingsPage() {
   const [graphSenderEmail, setGraphSenderEmail] = useState(
     settings.graphSenderEmail || settings.fromEmail || "",
   );
+  const [intent, setIntent] = useState("save");
   const [emailSubjectTemplate, setEmailSubjectTemplate] = useState(
     settings.emailSubjectTemplate || DEFAULT_EMAIL_SUBJECT_TEMPLATE,
   );
@@ -154,6 +155,7 @@ export default function SettingsPage() {
                 ) : null}
                 <Form method="post">
                   <FormLayout>
+                    <input type="hidden" name="intent" value={intent} />
                     <input
                       type="hidden"
                       name="enabled"
@@ -297,10 +299,14 @@ export default function SettingsPage() {
                       helpText="Used only when you click Send test email."
                     />
                     <InlineStack gap="300">
-                      <Button submit loading={isSaving}>
+                      <Button submit loading={isSaving} onClick={() => setIntent("save")}>
                         Save
                       </Button>
-                      <Button submit name="intent" value="send_test_email" variant="secondary">
+                      <Button
+                        submit
+                        variant="secondary"
+                        onClick={() => setIntent("send_test_email")}
+                      >
                         Send test email
                       </Button>
                     </InlineStack>

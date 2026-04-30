@@ -135,10 +135,10 @@ export async function sendOrderNotificationEmail(settings, recipients, renderedE
     };
   }
 
-  if (!settings.smtpHost || !settings.smtpPort || !settings.fromEmail) {
+  if (!settings.fromEmail) {
     return {
       ok: false,
-      message: "SMTP host, SMTP port, and from email are required.",
+      message: "From email is required.",
     };
   }
 
