@@ -1,4 +1,4 @@
-import { json, redirect } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { parseRecipientEmails } from "../utils/recipients";
@@ -86,7 +86,7 @@ export const action = async ({ request }) => {
     imported++;
   }
 
-  return redirect(`/app/mappings?imported=${imported}&skipped=${skipped}`);
+  return json({ ok: true, imported, skipped });
 };
 
 // Simple CSV line parser that handles quoted fields

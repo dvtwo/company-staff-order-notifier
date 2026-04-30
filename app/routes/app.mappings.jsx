@@ -1,5 +1,5 @@
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useLoaderData, useNavigation, useSearchParams } from "@remix-run/react";
+import { Form, useActionData, useFetcher, useLoaderData, useNavigation } from "@remix-run/react";
 import {
   Banner,
   BlockStack,
@@ -100,11 +100,8 @@ export default function MappingsPage() {
   const { companies, mappingByLocationId, companiesError } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
-  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const isLoading = navigation.state !== "idle";
-  const importedCount = searchParams.get("imported");
-  const skippedCount = searchParams.get("skipped");
 
   const q = query.trim().toLowerCase();
   const filteredCompanies = q
@@ -134,13 +131,6 @@ export default function MappingsPage() {
         {actionData?.message ? (
           <Banner tone={actionData.ok === false ? "critical" : "success"}>
             {actionData.message}
-          </Banner>
-        ) : null}
-
-        {importedCount !== null ? (
-          <Banner tone="success" onDismiss={() => {}}>
-            Import complete — {importedCount} location{importedCount === "1" ? "" : "s"} updated
-            {skippedCount > 0 ? `, ${skippedCount} skipped (no email or missing ID)` : ""}.
           </Banner>
         ) : null}
 
@@ -231,9 +221,19 @@ export default function MappingsPage() {
 }
 
 function CsvImportExport() {
+  const fetcher = useFetcher();
   const [importing, setImporting] = useState(false);
   const [fileName, setFileName] = useState("");
   const [downloading, setDownloading] = useState(false);
+
+  const isUploading = fetcher.state !== "idle";
+  const result = fetcher.data;
+
+  // Reset form after successful import
+  const handleFileChange = (e) => {
+    setFileName(e.target.files?.[0]?.name || "");
+    // Clear previous result when a new file is selected
+  };
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -270,17 +270,26 @@ function CsvImportExport() {
           <Button onClick={handleDownload} loading={downloading}>
             Download CSV template
           </Button>
-          <Button onClick={() => setImporting((v) => !v)} variant="plain">
+          <Button onClick={() => { setImporting((v) => !v); }} variant="plain">
             {importing ? "Cancel import" : "Import CSV"}
           </Button>
         </InlineStack>
 
+        {result?.ok && (
+          <Banner tone="success">
+            Import complete — {result.imported} location{result.imported === 1 ? "" : "s"} updated
+            {result.skipped > 0 ? `, ${result.skipped} skipped` : ""}.
+          </Banner>
+        )}
+        {result?.ok === false && (
+          <Banner tone="critical">{result.message}</Banner>
+        )}
+
         {importing && (
-          <form
+          <fetcher.Form
             method="post"
             action="/app/mappings/import"
             encType="multipart/form-data"
-            style={{ marginTop: "8px" }}
           >
             <BlockStack gap="200">
               <label
@@ -302,16 +311,18 @@ function CsvImportExport() {
                   name="csv"
                   accept=".csv,text/csv"
                   style={{ display: "none" }}
-                  onChange={(e) => setFileName(e.target.files?.[0]?.name || "")}
+                  onChange={handleFileChange}
                 />
               </label>
               {fileName && (
                 <div>
-                  <Button submit>Upload and import</Button>
+                  <Button submit loading={isUploading} disabled={isUploading}>
+                    {isUploading ? "Importing…" : "Upload and import"}
+                  </Button>
                 </div>
               )}
             </BlockStack>
-          </form>
+          </fetcher.Form>
         )}
       </BlockStack>
     </Card>
