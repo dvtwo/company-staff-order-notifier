@@ -31,6 +31,7 @@ model NotificationSetting {
   id                   String   @id @default(cuid())
   shop                 String   @unique
   enabled              Boolean  @default(true)
+  emailProvider        String   @default("smtp")
   fromEmail            String?
   fromName             String?
   emailSubjectTemplate String   @default("New order from {{companyName}}: {{orderName}}")
@@ -40,6 +41,10 @@ model NotificationSetting {
   smtpUser             String?
   smtpPassword         String?
   smtpSecure           Boolean  @default(false)
+  graphTenantId        String?
+  graphClientId        String?
+  graphClientSecret    String?
+  graphSenderEmail     String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }

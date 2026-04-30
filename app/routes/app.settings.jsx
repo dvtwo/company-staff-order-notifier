@@ -10,6 +10,7 @@ import {
   InlineStack,
   Layout,
   Page,
+  Select,
   Text,
   TextField,
 } from "@shopify/polaris";
@@ -33,6 +34,8 @@ export const loader = async ({ request }) => {
       ...settings,
       smtpPassword: undefined,
       hasSmtpPassword: Boolean(settings.smtpPassword),
+      graphClientSecret: undefined,
+      hasGraphClientSecret: Boolean(settings.graphClientSecret),
     },
   });
 };
@@ -44,12 +47,16 @@ export const action = async ({ request }) => {
 
   const nextValues = {
     enabled: formData.get("enabled") === "true",
+    emailProvider: String(formData.get("emailProvider") || "smtp"),
     fromName: String(formData.get("fromName") || ""),
     fromEmail: String(formData.get("fromEmail") || ""),
     smtpHost: String(formData.get("smtpHost") || ""),
     smtpPort: Number(formData.get("smtpPort") || 587),
     smtpUser: String(formData.get("smtpUser") || ""),
     smtpSecure: formData.get("smtpSecure") === "true",
+    graphTenantId: String(formData.get("graphTenantId") || ""),
+    graphClientId: String(formData.get("graphClientId") || ""),
+    graphSenderEmail: String(formData.get("graphSenderEmail") || ""),
     emailSubjectTemplate:
       String(formData.get("emailSubjectTemplate") || "") ||
       DEFAULT_EMAIL_SUBJECT_TEMPLATE,
@@ -58,6 +65,7 @@ export const action = async ({ request }) => {
   };
 
   const newSmtpPassword = String(formData.get("smtpPassword") || "");
+  const newGraphClientSecret = String(formData.get("graphClientSecret") || "");
 
   const updatedSettings = await getNotificationSetting(session.shop);
 
@@ -68,6 +76,10 @@ export const action = async ({ request }) => {
       // Dev-only plain storage is acceptable here. Replace this with encryption
       // before storing SMTP credentials in production.
       smtpPassword: newSmtpPassword || updatedSettings.smtpPassword || null,
+      // Dev-only plain storage is acceptable here. Replace this with encryption
+      // before storing Graph client secrets in production.
+      graphClientSecret:
+        newGraphClientSecret || updatedSettings.graphClientSecret || null,
     },
   });
 
@@ -102,6 +114,7 @@ export default function SettingsPage() {
   const navigation = useNavigation();
   const isSaving = navigation.state === "submitting";
   const [enabled, setEnabled] = useState(Boolean(settings.enabled));
+  const [emailProvider, setEmailProvider] = useState(settings.emailProvider || "smtp");
   const [smtpSecure, setSmtpSecure] = useState(Boolean(settings.smtpSecure));
   const [fromName, setFromName] = useState(settings.fromName || "");
   const [fromEmail, setFromEmail] = useState(settings.fromEmail || "");
@@ -109,6 +122,12 @@ export default function SettingsPage() {
   const [smtpPort, setSmtpPort] = useState(String(settings.smtpPort || 587));
   const [smtpUser, setSmtpUser] = useState(settings.smtpUser || "");
   const [smtpPassword, setSmtpPassword] = useState("");
+  const [graphTenantId, setGraphTenantId] = useState(settings.graphTenantId || "");
+  const [graphClientId, setGraphClientId] = useState(settings.graphClientId || "");
+  const [graphClientSecret, setGraphClientSecret] = useState("");
+  const [graphSenderEmail, setGraphSenderEmail] = useState(
+    settings.graphSenderEmail || settings.fromEmail || "",
+  );
   const [emailSubjectTemplate, setEmailSubjectTemplate] = useState(
     settings.emailSubjectTemplate || DEFAULT_EMAIL_SUBJECT_TEMPLATE,
   );
@@ -140,10 +159,24 @@ export default function SettingsPage() {
                       name="enabled"
                       value={String(enabled)}
                     />
+                    <input
+                      type="hidden"
+                      name="emailProvider"
+                      value={emailProvider}
+                    />
                     <Checkbox
                       label="Enable notifications"
                       checked={enabled}
                       onChange={setEnabled}
+                    />
+                    <Select
+                      label="Email provider"
+                      options={[
+                        { label: "SMTP", value: "smtp" },
+                        { label: "Microsoft Graph", value: "graph" },
+                      ]}
+                      value={emailProvider}
+                      onChange={setEmailProvider}
                     />
                     <TextField
                       label="From name"
@@ -160,47 +193,86 @@ export default function SettingsPage() {
                       onChange={setFromEmail}
                       autoComplete="email"
                     />
-                    <TextField
-                      label="SMTP host"
-                      name="smtpHost"
-                      value={smtpHost}
-                      onChange={setSmtpHost}
-                      autoComplete="off"
-                    />
-                    <TextField
-                      label="SMTP port"
-                      name="smtpPort"
-                      type="number"
-                      value={smtpPort}
-                      onChange={setSmtpPort}
-                      autoComplete="off"
-                    />
-                    <TextField
-                      label="SMTP username"
-                      name="smtpUser"
-                      value={smtpUser}
-                      onChange={setSmtpUser}
-                      autoComplete="username"
-                    />
-                    <TextField
-                      label="SMTP password"
-                      name="smtpPassword"
-                      type="password"
-                      value={smtpPassword}
-                      onChange={setSmtpPassword}
-                      autoComplete="new-password"
-                      helpText={settings.hasSmtpPassword ? "Leave blank to keep the saved password." : "Saved for development in plain text. Add encryption before production."}
-                    />
-                    <input
-                      type="hidden"
-                      name="smtpSecure"
-                      value={String(smtpSecure)}
-                    />
-                    <Checkbox
-                      label="Use secure SMTP (TLS/SSL)"
-                      checked={smtpSecure}
-                      onChange={setSmtpSecure}
-                    />
+                    {emailProvider === "smtp" ? (
+                      <>
+                        <TextField
+                          label="SMTP host"
+                          name="smtpHost"
+                          value={smtpHost}
+                          onChange={setSmtpHost}
+                          autoComplete="off"
+                        />
+                        <TextField
+                          label="SMTP port"
+                          name="smtpPort"
+                          type="number"
+                          value={smtpPort}
+                          onChange={setSmtpPort}
+                          autoComplete="off"
+                        />
+                        <TextField
+                          label="SMTP username"
+                          name="smtpUser"
+                          value={smtpUser}
+                          onChange={setSmtpUser}
+                          autoComplete="username"
+                        />
+                        <TextField
+                          label="SMTP password"
+                          name="smtpPassword"
+                          type="password"
+                          value={smtpPassword}
+                          onChange={setSmtpPassword}
+                          autoComplete="new-password"
+                          helpText={settings.hasSmtpPassword ? "Leave blank to keep the saved password." : "Saved for development in plain text. Add encryption before production."}
+                        />
+                        <input
+                          type="hidden"
+                          name="smtpSecure"
+                          value={String(smtpSecure)}
+                        />
+                        <Checkbox
+                          label="Use secure SMTP (TLS/SSL)"
+                          checked={smtpSecure}
+                          onChange={setSmtpSecure}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <TextField
+                          label="Microsoft tenant ID"
+                          name="graphTenantId"
+                          value={graphTenantId}
+                          onChange={setGraphTenantId}
+                          autoComplete="off"
+                        />
+                        <TextField
+                          label="Microsoft client ID"
+                          name="graphClientId"
+                          value={graphClientId}
+                          onChange={setGraphClientId}
+                          autoComplete="off"
+                        />
+                        <TextField
+                          label="Microsoft client secret"
+                          name="graphClientSecret"
+                          type="password"
+                          value={graphClientSecret}
+                          onChange={setGraphClientSecret}
+                          autoComplete="new-password"
+                          helpText={settings.hasGraphClientSecret ? "Leave blank to keep the saved client secret." : "Saved for development in plain text. Add encryption before production."}
+                        />
+                        <TextField
+                          label="Microsoft sender mailbox"
+                          name="graphSenderEmail"
+                          type="email"
+                          value={graphSenderEmail}
+                          onChange={setGraphSenderEmail}
+                          autoComplete="email"
+                          helpText="This mailbox must be allowed to send using the Graph app registration."
+                        />
+                      </>
+                    )}
                     <TextField
                       label="Email subject template"
                       name="emailSubjectTemplate"
