@@ -21,8 +21,11 @@ export function AppTabs() {
     return effectivePath.startsWith(tab.url);
   };
 
-  const isLoading = (tab) => navigatingTo?.startsWith(tab.url) ||
-    (tab.url === "/app" && (navigatingTo === "/app" || navigatingTo === "/app/"));
+  const isLoading = (tab) => {
+    if (!navigatingTo) return false;
+    if (tab.url === "/app") return navigatingTo === "/app" || navigatingTo === "/app/";
+    return navigatingTo.startsWith(tab.url);
+  };
 
   return (
     <div style={{ borderBottom: "1px solid #e1e3e5", marginBottom: "4px" }}>
