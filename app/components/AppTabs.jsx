@@ -1,4 +1,4 @@
-import { useLocation } from "@remix-run/react";
+import { Link, useLocation } from "@remix-run/react";
 
 const TABS = [
   { id: "dashboard", content: "Dashboard", url: "/app" },
@@ -23,9 +23,9 @@ export function AppTabs() {
         {TABS.map((tab) => {
           const active = isActive(tab);
           return (
-            <a
+            <Link
               key={tab.id}
-              href={tab.url}
+              to={tab.url}
               style={{
                 padding: "12px 16px",
                 fontSize: "14px",
@@ -38,7 +38,7 @@ export function AppTabs() {
               }}
             >
               {tab.content}
-            </a>
+            </Link>
           );
         })}
       </div>
