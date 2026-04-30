@@ -1,5 +1,5 @@
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useNavigation, useSearchParams } from "@remix-run/react";
 import {
   Banner,
   BlockStack,
@@ -100,7 +100,10 @@ export default function MappingsPage() {
   const { companies, mappingByLocationId, companiesError } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
+  const [searchParams] = useSearchParams();
   const isLoading = navigation.state !== "idle";
+  const importedCount = searchParams.get("imported");
+  const skippedCount = searchParams.get("skipped");
 
   return (
     <Page title="Company notifications">
@@ -113,10 +116,19 @@ export default function MappingsPage() {
           </Banner>
         ) : null}
 
+        {importedCount !== null ? (
+          <Banner tone="success" onDismiss={() => {}}>
+            Import complete — {importedCount} location{importedCount === "1" ? "" : "s"} updated
+            {skippedCount > 0 ? `, ${skippedCount} skipped (no email or missing ID)` : ""}.
+          </Banner>
+        ) : null}
+
         <Banner tone="info">
           Assign notification emails to each B2B company location. When an order
           is placed from that location, the listed recipients will be notified.
         </Banner>
+
+        <CsvImportExport />
 
         <Layout>
           <Layout.Section>
@@ -174,6 +186,72 @@ export default function MappingsPage() {
         </Layout>
       </BlockStack>
     </Page>
+  );
+}
+
+function CsvImportExport() {
+  const [importing, setImporting] = useState(false);
+  const [fileName, setFileName] = useState("");
+
+  return (
+    <Card>
+      <BlockStack gap="300">
+        <Text as="h2" variant="headingMd">
+          Bulk import / export
+        </Text>
+        <Text as="p" variant="bodySm" tone="subdued">
+          Download the CSV template, fill in the <strong>recipient_emails</strong> column
+          (comma-separated), then upload it back to set all mappings at once.
+        </Text>
+        <InlineStack gap="300" blockAlign="center">
+          <Button url="/app/mappings/export" target="_blank">
+            Download CSV template
+          </Button>
+          <Button onClick={() => setImporting((v) => !v)} variant="plain">
+            {importing ? "Cancel import" : "Import CSV"}
+          </Button>
+        </InlineStack>
+
+        {importing && (
+          <form
+            method="post"
+            action="/app/mappings/import"
+            encType="multipart/form-data"
+            style={{ marginTop: "8px" }}
+          >
+            <BlockStack gap="200">
+              <label
+                htmlFor="csv-upload"
+                style={{
+                  display: "inline-block",
+                  padding: "8px 16px",
+                  border: "1px dashed #8c9196",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  color: "#2c6ecb",
+                  fontSize: "14px",
+                }}
+              >
+                {fileName ? `📄 ${fileName}` : "Choose CSV file…"}
+                <input
+                  id="csv-upload"
+                  type="file"
+                  name="csv"
+                  accept=".csv,text/csv"
+                  style={{ display: "none" }}
+                  onChange={(e) => setFileName(e.target.files?.[0]?.name || "")}
+                />
+              </label>
+              {fileName && (
+                <div>
+                  <Button submit>Upload and import</Button>
+                </div>
+              )}
+            </BlockStack>
+          </form>
+        )}
+      </BlockStack>
+    </Card>
   );
 }
 
