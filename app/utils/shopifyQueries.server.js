@@ -107,24 +107,22 @@ export async function getOrderDetails(admin, orderGid) {
 }
 
 export async function getCompaniesWithStaff(admin) {
-  try {
-    const response = await admin.graphql(
-      `#graphql
-        query GetCompaniesWithStaff {
-          companies(first: 50) {
-            nodes {
-              id
-              name
-              locations(first: 20) {
-                nodes {
-                  id
-                  name
-                  staffMemberAssignments(first: 10) {
-                    nodes {
-                      staffMember {
-                        name
-                        email
-                      }
+  const response = await admin.graphql(
+    `#graphql
+      query GetCompaniesWithStaff {
+        companies(first: 50) {
+          nodes {
+            id
+            name
+            locations(first: 20) {
+              nodes {
+                id
+                name
+                staffMemberAssignments(first: 10) {
+                  nodes {
+                    staffMember {
+                      name
+                      email
                     }
                   }
                 }
@@ -132,29 +130,28 @@ export async function getCompaniesWithStaff(admin) {
             }
           }
         }
-      `,
-    );
+      }
+    `,
+  );
 
-    const payload = await response.json();
+  const payload = await response.json();
 
-    if (payload.errors?.length) {
-      return [];
-    }
-
-    return (payload.data?.companies?.nodes || []).map((company) => ({
-      id: company.id,
-      name: company.name,
-      locations: (company.locations?.nodes || []).map((loc) => ({
-        id: loc.id,
-        name: loc.name,
-        assignedStaff: (loc.staffMemberAssignments?.nodes || [])
-          .map((a) => ({ name: a.staffMember?.name, email: a.staffMember?.email }))
-          .filter((s) => s.email),
-      })),
-    }));
-  } catch {
-    return [];
+  if (payload.errors?.length) {
+    const message = payload.errors.map((e) => e.message).join("; ");
+    throw new Error(`Shopify companies query failed: ${message}`);
   }
+
+  return (payload.data?.companies?.nodes || []).map((company) => ({
+    id: company.id,
+    name: company.name,
+    locations: (company.locations?.nodes || []).map((loc) => ({
+      id: loc.id,
+      name: loc.name,
+      assignedStaff: (loc.staffMemberAssignments?.nodes || [])
+        .map((a) => ({ name: a.staffMember?.name, email: a.staffMember?.email }))
+        .filter((s) => s.email),
+    })),
+  }));
 }
 
 export async function getCompanyLocationAssignedStaff(admin, companyLocationGid) {

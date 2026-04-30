@@ -26,12 +26,19 @@ export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
   const shop = session.shop;
 
-  const [companies, mappings] = await Promise.all([
-    getCompaniesWithStaff(admin),
-    prisma.companyRecipientMapping.findMany({
-      where: { shop },
-    }),
-  ]);
+  let companies = [];
+  let companiesError = null;
+
+  try {
+    companies = await getCompaniesWithStaff(admin);
+  } catch (err) {
+    companiesError = err.message || "Unknown error fetching companies";
+    console.error("[mappings loader] getCompaniesWithStaff error:", err);
+  }
+
+  const mappings = await prisma.companyRecipientMapping.findMany({
+    where: { shop },
+  });
 
   // Index mappings by companyLocationId for fast lookup
   const mappingByLocationId = Object.fromEntries(
@@ -40,7 +47,7 @@ export const loader = async ({ request }) => {
       .map((m) => [m.companyLocationId, m]),
   );
 
-  return json({ companies, mappingByLocationId });
+  return json({ companies, mappingByLocationId, companiesError });
 };
 
 export const action = async ({ request }) => {
@@ -91,7 +98,7 @@ export const action = async ({ request }) => {
 };
 
 export default function MappingsPage() {
-  const { companies, mappingByLocationId } = useLoaderData();
+  const { companies, mappingByLocationId, companiesError } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
   const isLoading = navigation.state !== "idle";
@@ -119,6 +126,12 @@ export default function MappingsPage() {
               <InlineStack align="center">
                 <Spinner size="large" />
               </InlineStack>
+            ) : companiesError ? (
+              <Banner tone="critical">
+                <Text as="p" variant="bodyMd">
+                  <strong>Error loading companies:</strong> {companiesError}
+                </Text>
+              </Banner>
             ) : companies.length === 0 ? (
               <Card>
                 <Text as="p" variant="bodyMd" tone="subdued">
