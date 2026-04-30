@@ -233,6 +233,28 @@ export default function MappingsPage() {
 function CsvImportExport() {
   const [importing, setImporting] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch("/app/mappings/export");
+      const text = await res.text();
+      const blob = new Blob([text], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "company-mappings.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("CSV download failed", e);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <Card>
@@ -245,7 +267,7 @@ function CsvImportExport() {
           (comma-separated), then upload it back to set all mappings at once.
         </Text>
         <InlineStack gap="300" blockAlign="center">
-          <Button url="/app/mappings/export" target="_blank">
+          <Button onClick={handleDownload} loading={downloading}>
             Download CSV template
           </Button>
           <Button onClick={() => setImporting((v) => !v)} variant="plain">
