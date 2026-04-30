@@ -1,7 +1,6 @@
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import {
-  Badge,
   Banner,
   BlockStack,
   Box,
@@ -19,7 +18,7 @@ import { useState } from "react";
 import { AppTabs } from "../components/AppTabs";
 import { prisma } from "../db.server";
 import { authenticate } from "../shopify.server";
-import { getCompaniesWithStaff } from "../utils/shopifyQueries.server";
+import { getCompaniesWithLocations } from "../utils/shopifyQueries.server";
 import { parseRecipientEmails } from "../utils/recipients";
 
 export const loader = async ({ request }) => {
@@ -30,7 +29,7 @@ export const loader = async ({ request }) => {
   let companiesError = null;
 
   try {
-    companies = await getCompaniesWithStaff(admin);
+    companies = await getCompaniesWithLocations(admin);
   } catch (err) {
     companiesError = err.message || "Unknown error fetching companies";
     console.error("[mappings loader] getCompaniesWithStaff error:", err);
@@ -115,9 +114,8 @@ export default function MappingsPage() {
         ) : null}
 
         <Banner tone="info">
-          Orders from B2B companies are automatically sent to the assigned staff
-          member on that company location. Use the fallback emails below for
-          locations that don't have an assigned staff member in Shopify.
+          Assign notification emails to each B2B company location. When an order
+          is placed from that location, the listed recipients will be notified.
         </Banner>
 
         <Layout>
@@ -181,11 +179,9 @@ export default function MappingsPage() {
 
 function LocationRow({ company, location, mapping }) {
   const [editing, setEditing] = useState(false);
-  const [fallbackEmails, setFallbackEmails] = useState(
+  const [recipientEmails, setRecipientEmails] = useState(
     mapping?.recipientEmails || "",
   );
-
-  const hasAssignedStaff = location.assignedStaff.length > 0;
 
   return (
     <BlockStack gap="200">
@@ -195,30 +191,9 @@ function LocationRow({ company, location, mapping }) {
         </Text>
       </InlineStack>
 
-      {/* Assigned staff from Shopify */}
-      <BlockStack gap="100">
-        <Text as="p" variant="bodySm" tone="subdued">
-          Assigned staff
-        </Text>
-        {hasAssignedStaff ? (
-          <InlineStack gap="200" wrap>
-            {location.assignedStaff.map((s) => (
-              <Badge key={s.email} tone="success">
-                {s.name ? `${s.name} <${s.email}>` : s.email}
-              </Badge>
-            ))}
-          </InlineStack>
-        ) : (
-          <Text as="p" variant="bodySm" tone="caution">
-            No assigned staff — fallback emails will be used if set.
-          </Text>
-        )}
-      </BlockStack>
-
-      {/* Fallback emails */}
       <BlockStack gap="200">
         <Text as="p" variant="bodySm" tone="subdued">
-          Fallback emails {hasAssignedStaff ? "(unused while staff is assigned)" : ""}
+          Notification recipients
         </Text>
 
         {editing ? (
@@ -233,10 +208,10 @@ function LocationRow({ company, location, mapping }) {
                 label=""
                 labelHidden
                 name="recipientEmails"
-                value={fallbackEmails}
-                onChange={setFallbackEmails}
+                value={recipientEmails}
+                onChange={setRecipientEmails}
                 placeholder="email1@example.com, email2@example.com"
-                helpText="Comma-separated. Used only when no staff is assigned."
+                helpText="Comma-separated list of emails to notify when this location places an order."
                 autoComplete="off"
               />
               <InlineStack gap="200">
@@ -256,7 +231,7 @@ function LocationRow({ company, location, mapping }) {
                   size="slim"
                   variant="plain"
                   onClick={() => {
-                    setFallbackEmails(mapping?.recipientEmails || "");
+                    setRecipientEmails(mapping?.recipientEmails || "");
                     setEditing(false);
                   }}
                 >

@@ -106,10 +106,10 @@ export async function getOrderDetails(admin, orderGid) {
   };
 }
 
-export async function getCompaniesWithStaff(admin) {
+export async function getCompaniesWithLocations(admin) {
   const response = await admin.graphql(
     `#graphql
-      query GetCompaniesWithStaff {
+      query GetCompaniesWithLocations {
         companies(first: 50) {
           nodes {
             id
@@ -118,14 +118,6 @@ export async function getCompaniesWithStaff(admin) {
               nodes {
                 id
                 name
-                staffMemberAssignments(first: 10) {
-                  nodes {
-                    staffMember {
-                      name
-                      email
-                    }
-                  }
-                }
               }
             }
           }
@@ -147,9 +139,6 @@ export async function getCompaniesWithStaff(admin) {
     locations: (company.locations?.nodes || []).map((loc) => ({
       id: loc.id,
       name: loc.name,
-      assignedStaff: (loc.staffMemberAssignments?.nodes || [])
-        .map((a) => ({ name: a.staffMember?.name, email: a.staffMember?.email }))
-        .filter((s) => s.email),
     })),
   }));
 }
