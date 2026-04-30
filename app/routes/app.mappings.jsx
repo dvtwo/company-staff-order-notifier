@@ -101,9 +101,30 @@ export default function MappingsPage() {
   const actionData = useActionData();
   const navigation = useNavigation();
   const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState("");
   const isLoading = navigation.state !== "idle";
   const importedCount = searchParams.get("imported");
   const skippedCount = searchParams.get("skipped");
+
+  const q = query.trim().toLowerCase();
+  const filteredCompanies = q
+    ? companies
+        .map((company) => {
+          const nameMatch = company.name.toLowerCase().includes(q);
+          const matchedLocations = company.locations.filter(
+            (loc) =>
+              nameMatch ||
+              loc.name.toLowerCase().includes(q) ||
+              (mappingByLocationId[loc.id]?.recipientEmails || "")
+                .toLowerCase()
+                .includes(q),
+          );
+          return matchedLocations.length > 0
+            ? { ...company, locations: matchedLocations }
+            : null;
+        })
+        .filter(Boolean)
+    : companies;
 
   return (
     <Page title="Company notifications">
@@ -151,7 +172,25 @@ export default function MappingsPage() {
               </Card>
             ) : (
               <BlockStack gap="400">
-                {companies.map((company) => (
+                <TextField
+                  label="Search companies"
+                  labelHidden
+                  placeholder="Search by company name, location, or email…"
+                  value={query}
+                  onChange={setQuery}
+                  clearButton
+                  onClearButtonClick={() => setQuery("")}
+                  autoComplete="off"
+                  prefix={<span>🔍</span>}
+                />
+                {filteredCompanies.length === 0 ? (
+                  <Card>
+                    <Text as="p" variant="bodyMd" tone="subdued">
+                      No companies match &ldquo;{query}&rdquo;.
+                    </Text>
+                  </Card>
+                ) : null}
+                {filteredCompanies.map((company) => (
                   <Card key={company.id}>
                     <BlockStack gap="300">
                       <Text as="h2" variant="headingMd">
@@ -171,6 +210,7 @@ export default function MappingsPage() {
                                   company={company}
                                   location={loc}
                                   mapping={mappingByLocationId[loc.id] || null}
+                                  highlight={q}
                                 />
                               </Box>
                             </Box>
@@ -180,6 +220,7 @@ export default function MappingsPage() {
                     </BlockStack>
                   </Card>
                 ))}
+
               </BlockStack>
             )}
           </Layout.Section>
